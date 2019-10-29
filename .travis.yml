@@ -1,0 +1,25 @@
+sudo: required
+services:
+  - docker
+
+before_install:
+  - docker build -t oxideorcoal/docker-multi-container -f ./client/Dockerfile.dev ./client
+
+script:
+  - docker run -e CI=true oxideorcoal/docker-multi-container npm test
+
+after_success:
+  # Build images
+  - docker build -t oxideorcoal/multi-client ./client
+  - docker build -t oxideorcoal/multi-nginx ./nginx
+  - docker build -t oxideorcoal/multi-server ./server
+  - docker build -t oxideorcoal/multi-worker ./worker
+
+  # Log in to Docker CLI
+  - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_ID" --password-stdin
+
+  # Push built images to Docker Hub
+  - docker push oxideorcoal/multi-client
+  - docker push oxideorcoal/multi-nginx
+  - docker push oxideorcoal/multi-server
+  - docker push oxideorcoal/multi-worker
